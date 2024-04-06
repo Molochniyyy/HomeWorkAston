@@ -1,0 +1,12 @@
+
+u
+java:S1948"-Make "userService" transient or serializable.(ÇêŞ¢ıÿÿÿÿ8×äÁ¨ë1J$5d1cc32e-c7f8-4007-9a7c-26e897f93187
+o
+java:S1948",Make "userMapper" transient or serializable.(áç÷8×äÁ¨ë1J$6eb3ec59-b4f5-4d3e-b2cc-63720df74d78
+ƒ	java:S125"<This block of commented-out lines of code should be removed.(ëïŠ«ÿÿÿÿÿ8­Â¯§ë1J$dafe9a6d-1367-4e76-920c-f7901b6ea466
+“
+java:S1989("PHandle the following exception that could be thrown by "getWriter": IOException.(¾šçŞ8ªë¯§ë1J$d5dc0b29-242f-46b8-a1fd-cd5b4bb4f923
+Œ
+java:S1128	"IRemove this unused import 'pet.projects.homeworkaston.users.dto.UserDTO'.(Í‡øĞ8ßäÁ¨ë1J$9d4b8169-2e9d-48b1-9044-efae8672174f
+Š
+java:S1128"GRemove this unused import 'pet.projects.homeworkaston.utils.JsonUtils'.(´ñ´8ßäÁ¨ë1J$98023d43-0961-4234-a61b-95334d730bf0
