@@ -1,13 +1,12 @@
-package pet.projects.homeworkaston.users.servlet;
+package pet.projects.homeworkaston.tasks.servlet;
+
 
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import pet.projects.homeworkaston.exception.ErrorResponse;
-import pet.projects.homeworkaston.users.dto.UserDTO;
-import pet.projects.homeworkaston.users.mapper.UserMapper;
-import pet.projects.homeworkaston.users.mapper.UserMapperImpl;
-import pet.projects.homeworkaston.users.service.UserService;
-import pet.projects.homeworkaston.users.service.UserServiceImpl;
+import pet.projects.homeworkaston.tasks.dto.TaskDTO;
+import pet.projects.homeworkaston.tasks.service.TaskService;
+import pet.projects.homeworkaston.tasks.service.TaskServiceImpl;
 import pet.projects.homeworkaston.utils.Helper;
 import pet.projects.homeworkaston.utils.JsonUtils;
 
@@ -19,20 +18,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.List;
 
-@WebServlet(name = "UserServlet", value = "/users/*")
+@WebServlet(name = "TaskServlet", value = "/tasks/*")
 @Slf4j
-public class UserServlet extends HttpServlet {
+public class TaskServlet extends HttpServlet {
 
-    private UserService userService;
-    private UserMapper userMapper;
+    private TaskService taskService;
 
     @Override
     public void init() {
-        userService = new UserServiceImpl();
-        userMapper = new UserMapperImpl();
+        taskService = new TaskServiceImpl();
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -43,21 +39,21 @@ public class UserServlet extends HttpServlet {
 
         switch (pathInfo) {
             case "":
-                doGetUserById(req, resp);
+                doGetTaskById(req, resp);
                 break;
             case "/all":
-                doGetAllUsers(req, resp);
+                doGetAllTasksOfUser(req, resp);
                 break;
         }
     }
 
-    protected void doGetUserById(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGetTaskById(HttpServletRequest req, HttpServletResponse resp) {
         String id = req.getParameter("id");
-        UserDTO userDTO = userMapper.toDTO(userService.getUserById(Long.parseLong(id)));
+        TaskDTO taskDTO = taskService.getTaskById(Long.parseLong(id));
         try {
             resp.setContentType("application/json");
             PrintWriter out = resp.getWriter();
-            out.println(JsonUtils.convertObjectToJson(userDTO));
+            out.println(JsonUtils.convertObjectToJson(taskDTO));
             out.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,13 +61,14 @@ public class UserServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
     }
 
+    protected void doGetAllTasksOfUser(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Long userId = Long.parseLong(req.getParameter("userId"));
 
-    protected void doGetAllUsers(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        List<UserDTO> users = userService.getAllUsers(); // Получение списка всех пользователей из сервиса
+        List<TaskDTO> tasks = taskService.getAllTasksOfUser(userId); // Получение списка всех задач из сервиса
 
-        // Преобразование списка пользователей в JSON
+        // Преобразование списка задач в JSON
         Gson gson = new Gson();
-        String json = gson.toJson(users);
+        String json = gson.toJson(tasks);
 
         // Отправка JSON-ответа
         resp.setContentType("application/json");
@@ -82,10 +79,9 @@ public class UserServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
     }
 
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Чтение данных о пользователе из тела запроса
+        // Чтение данных о задаче из тела запроса
         BufferedReader reader = req.getReader();
         StringBuilder requestBody = new StringBuilder();
         String line;
@@ -94,45 +90,56 @@ public class UserServlet extends HttpServlet {
         }
         reader.close();
 
-        // Преобразование JSON в объект UserDTO с помощью Gson
-        UserDTO newUser = JsonUtils.convertJsonToObject(requestBody.toString(), UserDTO.class);
+        // Преобразование JSON в объект TaskDTO с помощью Gson
+        TaskDTO newTask = JsonUtils.convertJsonToObject(requestBody.toString(), TaskDTO.class);
 
-        // Сохранение пользователя
-        userService.addUser(newUser);
+        // Сохранение задачи
+        taskService.addTask(newTask);
         // Отправка JSON-ответа
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
-        out.print(JsonUtils.convertObjectToJson(newUser)); // отправляем созданный объект UserDTO обратно в формате JSON
+        out.print(JsonUtils.convertObjectToJson(newTask)); // отправляем созданный объект TaskDTO обратно в формате JSON
         out.flush();
+
         resp.setStatus(HttpServletResponse.SC_CREATED);
     }
 
     @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        BufferedReader reader = req.getReader();
+        StringBuilder requestBody = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            requestBody.append(line);
+        }
+        reader.close();
+
+        TaskDTO updatedTask = JsonUtils.convertJsonToObject(requestBody.toString(), TaskDTO.class);
+
+        taskService.updateTask(updatedTask);
+
+        resp.setStatus(HttpServletResponse.SC_OK);
+    }
+
+
+    @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
         String id = req.getParameter("id");
-        Long userId = 0L;
+        Long taskId = 0L;
         if (id != null) {
             try {
-                userId = Long.parseLong(id);
+                taskId = Long.parseLong(id);
             } catch (NumberFormatException e) {
                 Helper.putObjectToResponse(resp, new ErrorResponse("Id is not valid"));
                 return;
             }
         }
-        boolean isDeleted = false;
-        try {
-            isDeleted = userService.deleteUser(userId);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        boolean isDeleted = taskService.deleteTask(taskId);
         if (!isDeleted) {
-            Helper.putObjectToResponse(resp, new ErrorResponse("User is not deleted"));
+            Helper.putObjectToResponse(resp, new ErrorResponse("Task is not deleted"));
             return;
         }
-        Helper.putObjectToResponse(resp, "200 OK");
-
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
-
-
 }
